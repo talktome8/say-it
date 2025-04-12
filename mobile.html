@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Say It Mobile - טקסט לדיבור</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background-color: #f0f2f5;
+      padding: 12px;
+      line-height: 1.5;
+      direction: rtl;
+      color: #333;
+    }
+    .container {
+      max-width: 550px;
+      margin: 0 auto;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 16px;
+      overflow: hidden;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      margin-bottom: 16px;
+      color: #1a73e8;
+    }
+    .text-area {
+      width: 100%;
+      height: 150px;
+      padding: 12px;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      resize: vertical;
+    }
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    button {
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .speak-btn {
+      background-color: #1a73e8;
+      color: white;
+    }
+    .stop-btn {
+      background-color: #ea4335;
+      color: white;
+    }
+    .settings-section {
+      background-color: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    .settings-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #5f6368;
+    }
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+    }
+    .range-control {
+      margin-bottom: 10px;
+    }
+    .range-control label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.9rem;
+      color: #5f6368;
+    }
+    .range-row {
+      display: flex;
+      align-items: center;
+    }
+    .range-row input {
+      flex: 1;
+      margin-right: 10px;
+    }
+    .range-value {
+      width: 40px;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    .status {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #5f6368;
+      height: 20px;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      color: #5f6368;
+      font-size: 0.8rem;
+    }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
+      color: #1a73e8;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Say It - טקסט לדיבור</h1>
+    
+    <textarea id="textInput" class="text-area" placeholder="הזן טקסט כאן שתרצה להשמיע..."></textarea>
+    
+    <div class="button-group">
+      <button id="speakBtn" class="speak-btn">
+        <span>🔊</span> הקרא
+      </button>
+      <button id="stopBtn" class="stop-btn">
+        <span>■</span> עצור
+      </button>
+    </div>
+    
+    <div class="settings-section">
+      <div class="settings-title">הגדרות קול</div>
+      
+      <select id="voiceSelect"></select>
+      
+      <div class="range-control">
+        <label for="rate">מהירות דיבור:</label>
+        <div class="range-row">
+          <input type="range" id="rate" min="0.5" max="2" value="1" step="0.1">
+          <span id="rateValue" class="range-value">1</span>
+        </div>
+      </div>
+      
+      <div class="range-control">
+        <label for="pitch">גובה טון:</label>
+        <div class="range-row">
+          <input type="range" id="pitch" min="0.5" max="2" value="1" step="0.1">
+          <span id="pitchValue" class="range-value">1</span>
+        </div>
+      </div>
+      
+      <div class="range-control">
+        <label for="volume">עוצמת קול:</label>
+        <div class="range-row">
+          <input type="range" id="volume" min="0" max="1" value="1" step="0.1">
+          <span id="volumeValue" class="range-value">100%</span>
+        </div>
+      </div>
+    </div>
+    
+    <div id="status" class="status"></div>
+  </div>
+  
+  <a href="index.html" class="back-link">לגרסה המלאה</a>
+  
+  <div class="footer">
+    <p>גרסת מובייל 1.0 - מתאימה לכל המכשירים</p>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Elements
+      const textInput = document.getElementById('textInput');
+      const speakBtn = document.getElementById('speakBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const voiceSelect = document.getElementById('voiceSelect');
+      const rate = document.getElementById('rate');
+      const rateValue = document.getElementById('rateValue');
+      const pitch = document.getElementById('pitch');
+      const pitchValue = document.getElementById('pitchValue');
+      const volume = document.getElementById('volume');
+      const volumeValue = document.getElementById('volumeValue');
+      const status = document.getElementById('status');
+      
+      // Speech synthesis
+      let voices = [];
+      let currentUtterance = null;
+      let resumeTimer = null;
+      
+      // Load voices
+      function loadVoices() {
+        try {
+          // Check if speechSynthesis is available
+          if (!window.speechSynthesis) {
+            voiceSelect.innerHTML = '<option>הדפדפן שלך לא תומך בהקראת טקסט</option>';
+            speakBtn.disabled = true;
+            status.textContent = 'הדפדפן לא תומך בהקראת טקסט';
+            return;
+          }
+          
+          // Get available voices
+          voices = window.speechSynthesis.getVoices();
+          
+          // Clear select
+          voiceSelect.innerHTML = '';
+          
+          if (voices.length === 0) {
+            voiceSelect.innerHTML = '<option>אין קולות זמינים</option>';
+            status.textContent = 'לא נמצאו קולות זמינים';
+            return;
+          }
+          
+          // Add voices to select
+          voices.forEach(function(voice, i) {
+            const option = document.createElement('option');
+            option.textContent = voice.name + ' (' + voice.lang + ')';
+            option.setAttribute('data-lang', voice.lang);
+            option.setAttribute('data-index', i);
+            voiceSelect.appendChild(option);
+            
+            // Select a Hebrew voice by default if available
+            if (voice.lang.includes('he') || voice.lang.includes('iw')) {
+              option.selected = true;
+            }
+          });
+          
+          status.textContent = 'נטענו ' + voices.length + ' קולות';
+          
+          // If no Hebrew voices, prefer English
+          if (!Array.from(voiceSelect.options).some(opt => opt.selected)) {
+            const englishVoice = Array.from(voiceSelect.options)
+              .find(opt => opt.getAttribute('data-lang')?.includes('en-'));
+            
+            if (englishVoice) {
+              englishVoice.selected = true;
+            }
+          }
+        } catch (e) {
+          console.error('Error loading voices:', e);
+          status.textContent = 'שגיאה בטעינת קולות: ' + e.message;
+          voiceSelect.innerHTML = '<option>שגיאה בטעינת קולות</option>';
+        }
+      }
+      
+      // Load voices initially
+      if (window.speechSynthesis) {
+        // Chrome needs to wait for voices to be loaded
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+          window.speechSynthesis.onvoiceschanged = loadVoices;
+        } else {
+          // For other browsers, try to load immediately
+          loadVoices();
+          // And try again after a delay to ensure they're loaded
+          setTimeout(loadVoices, 1000);
+        }
+      } else {
+        status.textContent = 'הדפדפן לא תומך בהקראת טקסט';
+      }
+      
+      // Speak function
+      function speak() {
+        try {
+          if (!window.speechSynthesis) {
+            status.textContent = 'הדפדפן לא תומך בהקראת טקסט';
+            return;
+          }
+          
+          const text = textInput.value.trim();
+          if (!text) {
+            status.textContent = 'אנא הזן טקסט להקראה';
+            return;
+          }
+          
+          // Cancel any ongoing speech
+          stopSpeaking();
+          
+          status.textContent = 'מקריא...';
+          
+          // Create utterance
+          const utterance = new SpeechSynthesisUtterance(text);
+          
+          // Set voice
+          const selectedOption = voiceSelect.selectedOptions[0];
+          const voiceIndex = selectedOption.getAttribute('data-index');
+          if (voiceIndex && voices[voiceIndex]) {
+            utterance.voice = voices[voiceIndex];
+          }
+          
+          // Set properties
+          utterance.rate = parseFloat(rate.value);
+          utterance.pitch = parseFloat(pitch.value);
+          utterance.volume = parseFloat(volume.value);
+          
+          // Events
+          utterance.onstart = function() {
+            status.textContent = 'מקריא...';
+          };
+          
+          utterance.onend = function() {
+            status.textContent = 'ההקראה הסתיימה';
+            clearInterval(resumeTimer);
+            resumeTimer = null;
+            currentUtterance = null;
+          };
+          
+          utterance.onerror = function(event) {
+            status.textContent = 'שגיאה בהקראה: ' + event.error;
+            clearInterval(resumeTimer);
+            resumeTimer = null;
+            currentUtterance = null;
+          };
+          
+          // Speak
+          currentUtterance = utterance;
+          window.speechSynthesis.speak(utterance);
+          
+          // Mobile Safari/Chrome fix - prevent utterance from cutting off
+          const isMobileSafari = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+          const isMobileChrome = /Android/i.test(navigator.userAgent) && /Chrome/i.test(navigator.userAgent);
+          
+          if (isMobileSafari || isMobileChrome) {
+            clearInterval(resumeTimer);
+            resumeTimer = setInterval(function() {
+              if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.pause();
+                window.speechSynthesis.resume();
+              } else {
+                clearInterval(resumeTimer);
+              }
+            }, 5000);
+          }
+        } catch (e) {
+          console.error('Error speaking:', e);
+          status.textContent = 'שגיאה בהקראה: ' + e.message;
+        }
+      }
+      
+      // Stop speaking
+      function stopSpeaking() {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          if (resumeTimer) {
+            clearInterval(resumeTimer);
+            resumeTimer = null;
+          }
+          currentUtterance = null;
+          status.textContent = 'ההקראה הופסקה';
+        }
+      }
+      
+      // Try to load voices one more time after a delay
+      setTimeout(function() {
+        if (voiceSelect.options.length <= 1) {
+          loadVoices();
+        }
+      }, 2000);
+      
+      // Event listeners
+      speakBtn.addEventListener('click', speak);
+      stopBtn.addEventListener('click', stopSpeaking);
+      
+      // Update visual feedback for range inputs
+      rate.addEventListener('input', function() {
+        rateValue.textContent = rate.value;
+      });
+      
+      pitch.addEventListener('input', function() {
+        pitchValue.textContent = pitch.value;
+      });
+      
+      volume.addEventListener('input', function() {
+        volumeValue.textContent = Math.round(volume.value * 100) + '%';
+      });
+      
+      // Remove loading state
+      status.textContent = 'מוכן להקראה';
+    });
+  </script>
+</body>
+</html> 
