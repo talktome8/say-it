@@ -8,6 +8,113 @@
     <meta name="keywords" content="text to speech, טקסט לדיבור, עברית, אנגלית, ערבית, רוסית, צרפתית, גרמנית">
     <title>Say It - טקסט לדיבור</title>
     <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background-color: #fafafa;
+        direction: rtl;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .app-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #2c3e50;
+      }
+      .text-input {
+        width: 100%;
+        padding: 15px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        min-height: 150px;
+        resize: vertical;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        flex: 1;
+        min-width: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .speak-btn {
+        background-color: #42b983;
+        color: white;
+      }
+      .stop-btn {
+        background-color: #e74c3c;
+        color: white;
+      }
+      .settings {
+        margin-top: 20px;
+        border-top: 1px solid #eee;
+        padding-top: 20px;
+      }
+      .slider-container {
+        margin-bottom: 15px;
+      }
+      .slider-container label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      footer {
+        text-align: center;
+        margin-top: 40px;
+        color: #666;
+        font-size: 14px;
+      }
+      .voices-container {
+        margin-bottom: 20px;
+      }
+      select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+      }
+      .mobile-message {
+        padding: 15px;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        color: #721c24;
+        margin-bottom: 20px;
+        font-size: 14px;
+        display: none;
+      }
+      @media (max-width: 768px) {
+        .mobile-message {
+          display: block;
+        }
+      }
+
+      /* Fallback loading elements */
       .loading-screen {
         display: flex;
         flex-direction: column;
@@ -36,7 +143,6 @@
       }
       .loading-text {
         margin-top: 20px;
-        font-family: 'Segoe UI', Arial, sans-serif;
       }
       .error-message {
         color: #e74c3c;
@@ -45,7 +151,6 @@
         text-align: center;
         background-color: #fef2f2;
         border-radius: 8px;
-        font-family: 'Segoe UI', Arial, sans-serif;
         margin-top: 20px;
         display: none;
       }
@@ -53,60 +158,257 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
-      /* Preload basic styles to prevent FOUC */
-      body {
-        font-family: 'Segoe UI', Arial, sans-serif;
-        background-color: #fafafa;
-        margin: 0;
-        padding: 0;
-      }
     </style>
     <script type="module" crossorigin src="/say-it/assets/index-DxlcgVep.js"></script>
     <link rel="stylesheet" crossorigin href="/say-it/assets/index-BOoSm_Aw.css">
   </head>
   <body>
+    <!-- Vue mount point -->
     <div id="app"></div>
     
+    <!-- Fallback for mobile/when Vue fails -->
+    <div id="fallback" style="display:none;">
+      <div class="app-container">
+        <h1>Say It - טקסט לדיבור</h1>
+        
+        <div class="mobile-message">
+          שים לב: גרסת המובייל מציעה פונקציונליות בסיסית בלבד. לחוויה מלאה השתמש במחשב.
+        </div>
+        
+        <textarea id="textToSpeak" class="text-input" placeholder="הזן טקסט כאן שתרצה להשמיע..."></textarea>
+        
+        <div class="controls">
+          <button id="speakButton" class="btn speak-btn">
+            <span>🔊</span> הקרא
+          </button>
+          <button id="stopButton" class="btn stop-btn">
+            <span>■</span> עצור
+          </button>
+        </div>
+        
+        <div class="voices-container">
+          <label for="voiceSelect">בחר קול:</label>
+          <select id="voiceSelect"></select>
+        </div>
+        
+        <div class="settings">
+          <div class="slider-container">
+            <label for="rate">מהירות דיבור:</label>
+            <input type="range" id="rate" min="0.5" max="2" value="1" step="0.1">
+            <span id="rateValue">1</span>
+          </div>
+          
+          <div class="slider-container">
+            <label for="pitch">גובה טון:</label>
+            <input type="range" id="pitch" min="0.1" max="2" value="1" step="0.1">
+            <span id="pitchValue">1</span>
+          </div>
+          
+          <div class="slider-container">
+            <label for="volume">עוצמת קול:</label>
+            <input type="range" id="volume" min="0" max="1" value="1" step="0.1">
+            <span id="volumeValue">100%</span>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <p>מערכת טקסט-לדיבור בסיסית</p>
+        <p>גרסה 1.1.2 (מצב תאימות)</p>
+      </footer>
+    </div>
+    
+    <!-- Loading Screen -->
     <div class="loading-screen" id="loading-screen">
       <div class="loading-indicator"></div>
       <div class="loading-text">טוען את האפליקציה...</div>
       <div class="error-message" id="error-message">
-        אירעה שגיאה בטעינת האפליקציה. מנסה להפעיל מצב מופחת.
+        אירעה שגיאה בטעינת האפליקציה. טוען מצב תאימות פשוט...
       </div>
     </div>
 
     <script>
-      // Safety timeout - if app doesn't load in 10 seconds, show error
-      const loadTimeout = setTimeout(() => {
-        document.getElementById('error-message').style.display = 'block';
-      }, 10000);
-
-      // Error handling to prevent complete failure
+      // Basic fallback script
+      document.addEventListener('DOMContentLoaded', function() {
+        // Try to detect mobile devices that might have issues
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        // Set timeout - if Vue app doesn't load in 3 seconds, show fallback
+        const loadTimeout = setTimeout(function() {
+          document.getElementById('error-message').style.display = 'block';
+          
+          // After a short delay, show the fallback interface
+          setTimeout(function() {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('fallback').style.display = 'block';
+            initBasicSpeech();
+          }, 2000);
+        }, 3000);
+        
+        // For mobile, we can choose to immediately show the fallback
+        if (isMobile) {
+          // On mobile devices, decrease the timeout
+          clearTimeout(loadTimeout);
+          setTimeout(function() {
+            // Check if Vue app has initialized
+            if (document.getElementById('app').children.length === 0) {
+              document.getElementById('error-message').style.display = 'block';
+              setTimeout(function() {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('fallback').style.display = 'block';
+                initBasicSpeech();
+              }, 1000);
+            }
+          }, 2000);
+        }
+        
+        // Initialize basic speech functionality
+        function initBasicSpeech() {
+          // Elements
+          const textToSpeak = document.getElementById('textToSpeak');
+          const speakButton = document.getElementById('speakButton');
+          const stopButton = document.getElementById('stopButton');
+          const voiceSelect = document.getElementById('voiceSelect');
+          const rate = document.getElementById('rate');
+          const rateValue = document.getElementById('rateValue');
+          const pitch = document.getElementById('pitch');
+          const pitchValue = document.getElementById('pitchValue');
+          const volume = document.getElementById('volume');
+          const volumeValue = document.getElementById('volumeValue');
+          
+          let voices = [];
+          let currentUtterance = null;
+          
+          // Load voices
+          function loadVoices() {
+            try {
+              if (window.speechSynthesis) {
+                voices = window.speechSynthesis.getVoices();
+                
+                // Clear select
+                voiceSelect.innerHTML = '';
+                
+                // Add voices to select
+                voices.forEach(function(voice, i) {
+                  const option = document.createElement('option');
+                  option.textContent = voice.name + ' (' + voice.lang + ')';
+                  option.setAttribute('data-index', i);
+                  voiceSelect.appendChild(option);
+                });
+                
+                // If no voices, show message
+                if (voices.length === 0) {
+                  const option = document.createElement('option');
+                  option.textContent = 'אין קולות זמינים';
+                  voiceSelect.appendChild(option);
+                  speakButton.disabled = true;
+                }
+              } else {
+                voiceSelect.innerHTML = '<option>הדפדפן שלך לא תומך בהקראת טקסט</option>';
+                speakButton.disabled = true;
+              }
+            } catch(e) {
+              console.error('Error loading voices:', e);
+            }
+          }
+          
+          // Load voices on page load
+          loadVoices();
+          
+          // Load voices when they change (for Chrome)
+          if (window.speechSynthesis && 'onvoiceschanged' in window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+          }
+          
+          // Speak function
+          function speak() {
+            try {
+              if (!window.speechSynthesis) return;
+              
+              // Cancel any ongoing speech
+              window.speechSynthesis.cancel();
+              
+              // If no text, do nothing
+              if (!textToSpeak.value.trim()) return;
+              
+              // Create utterance
+              const utterance = new SpeechSynthesisUtterance(textToSpeak.value);
+              
+              // Set voice
+              const selectedIndex = voiceSelect.selectedOptions[0].getAttribute('data-index');
+              if (selectedIndex && voices[selectedIndex]) {
+                utterance.voice = voices[selectedIndex];
+              }
+              
+              // Set rate, pitch and volume
+              utterance.rate = parseFloat(rate.value);
+              utterance.pitch = parseFloat(pitch.value);
+              utterance.volume = parseFloat(volume.value);
+              
+              // Speak
+              currentUtterance = utterance;
+              window.speechSynthesis.speak(utterance);
+              
+              // For mobile devices, add a workaround for the utterance timeout issue
+              if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                const resumeTimer = setInterval(function() {
+                  if (window.speechSynthesis.speaking) {
+                    window.speechSynthesis.pause();
+                    window.speechSynthesis.resume();
+                  } else {
+                    clearInterval(resumeTimer);
+                  }
+                }, 5000);
+                
+                utterance.onend = function() {
+                  clearInterval(resumeTimer);
+                };
+              }
+            } catch(e) {
+              console.error('Error speaking:', e);
+              alert('אירעה שגיאה בהקראת הטקסט');
+            }
+          }
+          
+          // Stop speaking
+          function stopSpeaking() {
+            if (window.speechSynthesis) {
+              window.speechSynthesis.cancel();
+              currentUtterance = null;
+            }
+          }
+          
+          // Event listeners
+          speakButton.addEventListener('click', speak);
+          stopButton.addEventListener('click', stopSpeaking);
+          
+          // Update values when sliders change
+          rate.addEventListener('input', function() {
+            rateValue.textContent = rate.value;
+          });
+          
+          pitch.addEventListener('input', function() {
+            pitchValue.textContent = pitch.value;
+          });
+          
+          volume.addEventListener('input', function() {
+            volumeValue.textContent = Math.round(volume.value * 100) + '%';
+          });
+        }
+      });
+      
+      // App loaded function - called by Vue when ready
+      window.appLoaded = function() {
+        document.getElementById('loading-screen').classList.add('loaded');
+      };
+      
+      // Error handler
       window.addEventListener('error', function(event) {
         console.error('App error:', event.error);
         document.getElementById('error-message').style.display = 'block';
       });
-
-      // Mark app as loaded when it's ready
-      window.appLoaded = function() {
-        clearTimeout(loadTimeout);
-        document.getElementById('loading-screen').classList.add('loaded');
-        // Remove after transition completes
-        setTimeout(() => {
-          const loadingScreen = document.getElementById('loading-screen');
-          if (loadingScreen && loadingScreen.parentNode) {
-            loadingScreen.parentNode.removeChild(loadingScreen);
-          }
-        }, 500);
-      };
-
-      // Fallback if app doesn't call appLoaded
-      window.addEventListener('load', function() {
-        setTimeout(() => {
-          window.appLoaded();
-        }, 2000);
-      });
     </script>
     
+    <!-- Vue app -->
   </body>
 </html>
