@@ -158,13 +158,60 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
+
+      /* Mobile redirect banner */
+      .mobile-redirect {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px;
+        text-align: center;
+        z-index: 9998;
+        display: none;
+      }
+      .mobile-redirect a {
+        display: inline-block;
+        background-color: #42b983;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-decoration: none;
+        margin-top: 10px;
+        font-weight: bold;
+      }
     </style>
+    <script>
+      // Detect mobile and redirect if needed
+      (function() {
+        var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+          // Either show banner or redirect directly
+          if (localStorage.getItem('preferMobileVersion') === 'true') {
+            window.location.href = 'mobile.html';
+          } else {
+            // Will show banner after page load
+            window.showMobileBanner = true;
+          }
+        }
+      })();
+    </script>
     <script type="module" crossorigin src="/say-it/assets/index-DxlcgVep.js"></script>
     <link rel="stylesheet" crossorigin href="/say-it/assets/index-BOoSm_Aw.css">
   </head>
   <body>
     <!-- Vue mount point -->
     <div id="app"></div>
+    
+    <!-- Mobile redirect banner -->
+    <div id="mobile-redirect" class="mobile-redirect">
+      <div>נראה שאתה משתמש במכשיר נייד</div>
+      <div>האם תרצה לעבור לגרסה מיוחדת למובייל?</div>
+      <a href="mobile.html" id="go-to-mobile">כן, עבור לגרסת מובייל</a>
+    </div>
     
     <!-- Fallback for mobile/when Vue fails -->
     <div id="fallback" style="display:none;">
@@ -230,6 +277,16 @@
     <script>
       // Basic fallback script
       document.addEventListener('DOMContentLoaded', function() {
+        // Show mobile banner if needed
+        if (window.showMobileBanner) {
+          document.getElementById('mobile-redirect').style.display = 'block';
+          
+          // Set preference if user clicks
+          document.getElementById('go-to-mobile').addEventListener('click', function() {
+            localStorage.setItem('preferMobileVersion', 'true');
+          });
+        }
+        
         // Try to detect mobile devices that might have issues
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
@@ -406,6 +463,15 @@
       window.addEventListener('error', function(event) {
         console.error('App error:', event.error);
         document.getElementById('error-message').style.display = 'block';
+        
+        // If on mobile, suggest the mobile version after error
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+          setTimeout(function() {
+            if (confirm('נראה שיש בעיה בטעינת האפליקציה. האם תרצה לעבור לגרסה מיוחדת למובייל?')) {
+              window.location.href = 'mobile.html';
+            }
+          }, 3000);
+        }
       });
     </script>
     
